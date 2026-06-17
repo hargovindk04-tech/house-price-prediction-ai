@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>House Price Predictor</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>House Price Predictor</h1>
+      <p>Enter property details to get an AI-powered price estimate.</p>
+    </header>
+
+    <main class="main-grid">
+      <section class="card form-card">
+        <h2>Property Details</h2>
+        <form id="predict-form">
+          <div class="form-group">
+            <label for="area_sqft">Living Area (sq ft)</label>
+            <input type="number" id="area_sqft" name="area_sqft" min="100" step="1" value="1800" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="bedrooms">Bedrooms</label>
+              <input type="number" id="bedrooms" name="bedrooms" min="1" max="10" value="3" required>
+            </div>
+            <div class="form-group">
+              <label for="bathrooms">Bathrooms</label>
+              <input type="number" id="bathrooms" name="bathrooms" min="1" max="10" step="0.5" value="2" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="age">Property Age (years)</label>
+              <input type="number" id="age" name="age" min="0" max="150" value="15" required>
+            </div>
+            <div class="form-group">
+              <label for="location_score">Location Score (1-10)</label>
+              <input type="number" id="location_score" name="location_score" min="1" max="10" step="0.1" value="7.5" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-btn">Predict Price</button>
+        </form>
+      </section>
+
+      <section class="card result-card">
+        <h2>Prediction Result</h2>
+        <div id="result-placeholder" class="result-placeholder">
+          <span class="icon">🏠</span>
+          <p>Submit the form to see the estimated price.</p>
+        </div>
+        <div id="result-content" class="result-content hidden">
+          <p class="result-label">Estimated Price</p>
+          <p class="result-price" id="predicted-price">$0</p>
+          <p class="result-meta" id="result-meta"></p>
+        </div>
+        <div id="error-message" class="error-message hidden"></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>
+        API docs:
+        <a href="/docs" target="_blank" rel="noopener">Swagger UI</a>
+        ·
+        <a href="/redoc" target="_blank" rel="noopener">ReDoc</a>
+        ·
+        <a href="/health" target="_blank" rel="noopener">Health</a>
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    const form = document.getElementById("predict-form");
+    const submitBtn = document.getElementById("submit-btn");
+    const resultPlaceholder = document.getElementById("result-placeholder");
+    const resultContent = document.getElementById("result-content");
+    const errorMessage = document.getElementById("error-message");
+    const predictedPrice = document.getElementById("predicted-price");
+    const resultMeta = document.getElementById("result-meta");
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      errorMessage.classList.add("hidden");
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Predicting...";
+
+      const payload = {
+        area_sqft: parseFloat(document.getElementById("area_sqft").value),
+        bedrooms: parseInt(document.getElementById("bedrooms").value, 10),
+        bathrooms: parseFloat(document.getElementById("bathrooms").value),
+        age: parseInt(document.getElementById("age").value, 10),
+        location_score: parseFloat(document.getElementById("location_score").value),
+      };
+
+      try {
+        const response = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.detail || "Prediction request failed");
+        }
+
+        resultPlaceholder.classList.add("hidden");
+        resultContent.classList.remove("hidden");
+        predictedPrice.textContent = formatCurrency(data.predicted_price);
+        resultMeta.textContent = `Currency: ${data.currency}`;
+      } catch (error) {
+        errorMessage.textContent = error.message;
+        errorMessage.classList.remove("hidden");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Predict Price";
+      }
+    });
+  </script>
+</body>
+</html>
