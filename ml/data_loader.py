@@ -62,7 +62,7 @@ def ensure_training_data(csv_path: Path | None = None) -> Path:
     try:
         download_dir = kagglehub.competition_download(
             KAGGLE_COMPETITION,
-            output_dir=str(DATA_DIR),
+           
         )
     except Exception as exc:
         exc_name = exc.__class__.__name__
