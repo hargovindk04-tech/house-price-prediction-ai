@@ -7,6 +7,9 @@ venv/
 .pytest_cache/
 .mypy_cache/
 *.log
+ml/data/*.csv
+ml/data/*.zip
+ml/artifacts/
 =======
 # Byte-compiled / optimized / DLL files
 __pycache__/

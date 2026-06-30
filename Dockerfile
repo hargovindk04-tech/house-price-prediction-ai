@@ -10,7 +10,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python ml/train.py
+# Optional Kaggle credentials for downloading competition data at build time.
+# Accept competition rules at https://www.kaggle.com/c/house-prices-advanced-regression-techniques
+ARG KAGGLE_USERNAME
+ARG KAGGLE_KEY
+ENV KAGGLE_USERNAME=${KAGGLE_USERNAME} \
+    KAGGLE_KEY=${KAGGLE_KEY}
+
+RUN python -m ml.train
 
 EXPOSE 8000
 
