@@ -10,6 +10,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import pandera as pa
+from pandera import Column, Check
+
 FEATURE_NAMES = ["area_sqft", "bedrooms", "bathrooms", "age", "location_score"]
 TARGET_COLUMN = "SalePrice"
 
@@ -25,6 +28,19 @@ LOCATION_SCORES = {
     "Downtown": 9.0,
 }
 
+# Define the expected data types and constraints
+HouseDataSchema = pa.DataFrameSchema(
+    {
+        "area_sqft": Column(float, pa.Check.greater_than(0)),
+        "bedrooms": Column(float, pa.Check.greater_than_or_equal_to(1)),
+        "bathrooms": Column(float, pa.Check.greater_than_or_equal_to(1)),
+        "age": Column(float, pa.Check.greater_than_or_equal_to(0)),
+        "location_score": Column(float, pa.Check.greater_than_or_equal_to(1)),
+        TARGET_COLUMN: Column(float, pa.Check.greater_than(0)),
+    },
+    coerce=True,  # Automatically attempt to cast data to float
+    strict=False  # Allow other columns to exist in the dataframe if necessary
+)
 
 def resolve_csv_path(csv_path: Path | None = None) -> Path:
     """Pick the training CSV path from argument, env var, or defaults."""
@@ -174,14 +190,11 @@ def _finalize_dataset(
     features: pd.DataFrame, target: pd.Series
 ) -> tuple[np.ndarray, np.ndarray]:
     dataset = pd.concat([features, target.rename(TARGET_COLUMN)], axis=1).dropna()
-    dataset = dataset[
-        (dataset["area_sqft"] > 0)
-        & (dataset["bedrooms"] >= 1)
-        & (dataset["bathrooms"] >= 1)
-        & (dataset["age"] >= 0)
-        & (dataset["location_score"] >= 1)
-        & (dataset[TARGET_COLUMN] > 0)
-    ]
+    
+
+    # ADD PANDERA VALIDATION HERE
+    # This will raise a SchemaError if any bad data bypassed the filters above
+    dataset = HouseDataSchema.validate(dataset)
 
     X = dataset[FEATURE_NAMES].to_numpy(dtype=float)
     y = dataset[TARGET_COLUMN].to_numpy(dtype=float)

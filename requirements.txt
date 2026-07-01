@@ -8,3 +8,4 @@ numpy==2.2.2
 pandas==2.2.3
 kagglehub==0.3.12
 pydantic==2.10.5
+pandera>=0.20.0
